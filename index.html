@@ -999,17 +999,21 @@ function opt(type,name,val,on,title,desc,extra=''){
 }
 
 /* ---------- views ---------- */
+function calcOut(w){
+  const z=S.lang==='zh', lo=Math.round(w*1.0), hi=Math.round(w*1.2), tr=Math.round(w*1.6), meal=[Math.round(lo/3),Math.round(hi/3)];
+  return `<div class="calc-out">
+    <div><span class="k">${z?'保持肌肉（每天）':'To keep muscle (per day)'}</span><b class="big">${lo}–${hi} g</b><span class="muted small">1.0–1.2 g × ${w} kg</span></div>
+    <div><span class="k">${z?'配合力量训练（最多约）':'With strength training (up to about)'}</span><b class="big">${tr} g</b><span class="muted small">1.6 g × ${w} kg</span></div>
+    <div><span class="k">${z?'每餐（分3餐）':'Per meal (3 meals)'}</span><b class="big">${meal[0]}–${Math.max(meal[1],25)} g</b><span class="muted small">${z?'每餐至少 25–30 g 效果较好':'Aim for at least 25–30 g a meal'}</span></div>
+   </div>`;
+}
 function protCalc(){
   const z=S.lang==='zh', w=Math.max(30,Math.min(150,+S.wt||60));
   const lo=Math.round(w*1.0), hi=Math.round(w*1.2), tr=Math.round(w*1.6), meal=[Math.round(lo/3),Math.round(hi/3)];
   return `<div class="calc">
    <label class="calc-in" for="wtIn"><span>${z?'你的体重':'Your body weight'}</span><span class="row" style="gap:8px"><input id="wtIn" type="number" inputmode="decimal" min="30" max="150" step="1" value="${w}"><b>kg</b></span></label>
    <input id="wtRange" type="range" min="35" max="120" step="1" value="${Math.min(120,Math.max(35,w))}" aria-label="${z?'体重':'Body weight'}">
-   <div class="calc-out">
-    <div><span class="k">${z?'保持肌肉（每天）':'To keep muscle (per day)'}</span><b class="big">${lo}–${hi} g</b><span class="muted small">1.0–1.2 g × ${w} kg</span></div>
-    <div><span class="k">${z?'配合力量训练（最多约）':'With strength training (up to about)'}</span><b class="big">${tr} g</b><span class="muted small">1.6 g × ${w} kg</span></div>
-    <div><span class="k">${z?'每餐（分3餐）':'Per meal (3 meals)'}</span><b class="big">${meal[0]}–${Math.max(meal[1],25)} g</b><span class="muted small">${z?'每餐至少 25–30 g 效果较好':'Aim for at least 25–30 g a meal'}</span></div>
-   </div>
+   <div id="calcOut">${calcOut(w)}</div>
    <p class="small"><b>${z?'一餐约 25–30 g 的例子：':'Meals with about 25–30 g:'}</b> ${S.diet==='veg'
      ?(z?'2 小块硬豆腐（150 g）+ 1 杯豆奶；或 ¾ 小杯熟扁豆/豆类（120 g）+ 1 小把坚果；或 4 片天贝（120 g）+ 1 杯酸奶。':'2 small blocks of firm tofu (150 g) + 1 glass of soy milk; or ¾ small cup of cooked lentils or beans (120 g) + a small handful of nuts; or 4 pieces of tempeh (120 g) + 1 cup of yoghurt.')
      :(z?'100 g 蒸鱼 + 1 个鸡蛋；或 100 g 鸡胸肉；或 150 g 豆腐 + 1 杯豆奶。':'100 g steamed fish + 1 egg; or 100 g chicken breast; or 150 g tofu + 1 glass of soy milk.')}</p>
@@ -2698,12 +2702,20 @@ document.addEventListener('change',ev=>{
   if(i.name==='prac'){const A=acadState();A.prac[i.value]=i.checked;acadSave()}
   const y=window.scrollY; render(); window.scrollTo(0,y);
 });
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.getElementById('modalHost').innerHTML=''});
+function setWt(v,sync){
+  v=Math.round(Math.max(30,Math.min(150,v))); S.wt=v; store.set('wt',v);
+  const o=document.getElementById('calcOut'); if(o) o.innerHTML=calcOut(v);
+  const r=document.getElementById('wtRange'), n=document.getElementById('wtIn');
+  if(r&&sync!=='num'||r&&sync==='both') r.value=Math.min(120,Math.max(35,v));
+  if(n&&(sync==='num'||sync==='both')) n.value=v;
+}
+document.addEventListener('change',ev=>{const i=ev.target;if(i.id!=='wtIn')return;const v=parseFloat(i.value);setWt(v>0?v:(+S.wt||60),'both')});
+document.addEventListener('keydown',ev=>{if(ev.target&&ev.target.id==='wtIn'&&ev.key==='Enter'){ev.target.blur();return}if(ev.key==='Escape')document.getElementById('modalHost').innerHTML=''});
 document.addEventListener('input',ev=>{
   const i=ev.target; if(i.id==='pracSup'){const A=acadState();A.sup=i.value.trim();acadSave();return} if(i.id!=='wtIn'&&i.id!=='wtRange') return;
-  const v=+i.value; if(!v) return; S.wt=v; store.set('wt',v);
-  const box=document.getElementById('calcBox'); if(!box) return;
-  const keep=i.id; box.innerHTML=protCalc(); const el=document.getElementById(keep); if(el){el.focus(); if(keep==='wtIn'){try{el.setSelectionRange(el.value.length,el.value.length)}catch(e){}}}
+  // update only the results while typing; never rewrite the box the user is typing in
+  const v=parseFloat(i.value); if(!(v>=30&&v<=150)) return;
+  setWt(v, i.id==='wtIn'?'range':'num');
 });
 S.admin=!!store.get('admin',false);
 render();
