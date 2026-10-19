@@ -36,6 +36,20 @@ A bilingual (English / 中文) strength-training web app for older adults by **T
   <img src="docs/screenshots/posture.png" width="220" alt="Posture and nerves">
 </p>
 
+### Coach tools (staff only)
+| Tool | What it does |
+|---|---|
+| **Pre-exercise screening (PAR-Q)** | Client health questionnaire adapted from the PAR-Q+ general questions, plus falls, pregnancy and surgery, with on-screen signature and PDF export |
+| **Field test timers** | 30-second chair stand (CDC STEADI norms), 6-minute walk (lap counter, minute prompts, Enright & Sherrill predicted distance) and Timed Up and Go stopwatch |
+| **Karvonen heart-rate zones** | Target heart-rate range from age and resting heart rate, with beta-blocker caution |
+| **BMI and waist circumference** | Asian BMI cut-offs, waist risk and waist-to-height ratio |
+| **Static postural assessment** | Front / side / back checklists with photos, suggested overactive and underactive muscles, editable notes |
+| **Overhead squat assessment** | Movement compensation checklist with suggested overactive and underactive muscles, editable notes |
+
+Every tool exports a branded PDF report. Client details are **not saved** in the app; export the PDF and store it securely.
+
+<p align="center"><img src="docs/screenshots/coach-tools.png" width="220" alt="Coach tools"></p>
+
 ### Staff Academy (staff only)
 | Course | Content | Time |
 |---|---|---|
