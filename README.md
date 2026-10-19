@@ -39,6 +39,7 @@ A bilingual (English / 中文) strength-training web app for older adults by **T
 ### Coach tools (staff only)
 | Tool | What it does |
 |---|---|
+| **Client consent (PDPA)** | Personal-data notice, required data and exercise consent, optional photo / publicity / contact consent, language explained in, family-member signing, client and witness signatures, PDF export |
 | **Pre-exercise screening (PAR-Q)** | Client health questionnaire adapted from the PAR-Q+ general questions, plus falls, pregnancy and surgery, with on-screen signature and PDF export |
 | **Field test timers** | 30-second chair stand (CDC STEADI norms), 6-minute walk (lap counter, minute prompts, Enright & Sherrill predicted distance) and Timed Up and Go stopwatch |
 | **Karvonen heart-rate zones** | Target heart-rate range from age and resting heart rate, with beta-blocker caution |
@@ -46,7 +47,7 @@ A bilingual (English / 中文) strength-training web app for older adults by **T
 | **Static postural assessment** | Front / side / back checklists with photos, suggested overactive and underactive muscles, editable notes |
 | **Overhead squat assessment** | Movement compensation checklist with suggested overactive and underactive muscles, editable notes |
 
-Every tool exports a branded PDF report. Client details are **not saved** in the app; export the PDF and store it securely.
+Every tool exports a branded PDF report, and **Full assessment PDF** combines all completed tools into one file. Photo upload stays locked until photo consent is given. Client details are **never saved** in the app: they are wiped on *New client*, on log-out and after 20 minutes of inactivity — export the PDF and store it securely.
 
 <p align="center"><img src="docs/screenshots/coach-tools.png" width="220" alt="Coach tools"></p>
 
@@ -76,6 +77,7 @@ Certificates show the trainer’s name, score and completion date and can be dow
 ## Privacy
 - Everything runs **in the browser**. Plans, workout history and academy progress are saved **only on that device** (browser local storage) and are never uploaded.
 - Clearing the browser or changing device resets the data.
+- Coach tools follow the Personal Data Protection Act 2012: consent is recorded before assessment and client data is not stored on the device.
 - The staff login hides coach tools from the public view; it is a convenience lock, **not** secure authentication. Do not enter confidential client information into the app.
 
 ## Technical notes
