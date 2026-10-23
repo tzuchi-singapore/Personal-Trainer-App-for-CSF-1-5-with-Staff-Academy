@@ -20,7 +20,7 @@ A bilingual (English / 中文) strength-training web app for older adults by **T
 ### For everyone (public pages)
 | Page | What it covers |
 |---|---|
-| **Home** | Why muscle matters, the benefits of strength training, food and protein (Normal / Vegetarian toggle with a protein calculator), sleep, and how muscle loss affects posture |
+| **Home** | Why muscle matters, the benefits of strength training, food and protein (Normal / Vegetarian toggle with a protein calculator personalised by sex, age group, activity level and recovery), sleep, and how muscle loss affects posture |
 | **Never too late** | Research showing muscle and bone can still grow in later life — charts drawn from published trials, the timeline of change, and real stories |
 | **Posture & nerves** | How weak muscles contribute to hunched back, degenerative scoliosis, forward-head posture and pinched nerves, with red-flag warnings |
 | **Safety** | Health Promotion Board-based guidance, the pain-stop rule and the not-medical disclaimer |

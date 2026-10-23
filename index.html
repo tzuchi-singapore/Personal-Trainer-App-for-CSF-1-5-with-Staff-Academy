@@ -692,6 +692,11 @@ footer{font-size:.78rem;color:var(--muted);text-align:center;padding-block:10px 
 .fld{display:flex;flex-direction:column;gap:6px;font-weight:700;color:var(--head);font-size:.9rem}
 .fld textarea,#admQuotes{width:100%;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
 #wtRange{width:100%;accent-color:var(--cyan-deep)}
+.pc-row{flex-direction:column;align-items:stretch;gap:6px}.pc-seg{display:grid;grid-template-columns:repeat(var(--n),1fr);border-radius:14px}.pc-seg button{font-size:.92rem;min-height:44px;padding:6px 8px;white-space:normal;line-height:1.2}.calc-in .row{flex-wrap:nowrap}
+.pc-ill{display:flex;align-items:center;gap:10px;text-align:left;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);font:inherit;font-weight:600;color:var(--ink);cursor:pointer}
+.pc-ill .tick{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line);display:grid;place-items:center;flex:none}.pc-ill .tick svg{width:14px;height:14px;opacity:0}
+.pc-ill.on{border-color:var(--ok);background:var(--ok-soft)}.pc-ill.on .tick{background:var(--ok);border-color:var(--ok);color:#fff}.pc-ill.on .tick svg{opacity:1}
+.calc-why{margin:0;font-weight:600;color:var(--head)}.calc-tips{margin:0}.calc-tips li{margin:4px 0}
 .calc-out{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .calc-out>div{background:var(--surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line)}
 .calc-out .k{font-size:.78rem;color:var(--muted);font-weight:700}
@@ -778,7 +783,7 @@ const BYID = Object.fromEntries(EX.map(e=>[e.id,e]));
 const store={get(k,d){try{const v=localStorage.getItem('tcpt_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tcpt_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- state ---------- */
-const S={diet:store.get('diet','normal'),simple:store.get('simple',true),wt:store.get('wt',60),
+const S={diet:store.get('diet','normal'),simple:store.get('simple',true),wt:store.get('wt',60),pc:Object.assign({sex:'',age:'65',act:'active',ill:false},store.get('pc',{})),
   lang:store.get('lang','en'), fs:store.get('fs',1),
   view:'home', cfs:store.get('cfs',null), post:store.get('post',[]), eq:store.get('eq',['bw','band','db']),
   seatedWarm:store.get('seatedWarm',null), safetyOk:false,
@@ -1065,18 +1070,38 @@ function opt(type,name,val,on,title,desc,extra=''){
 }
 
 /* ---------- views ---------- */
+/* protein needs: g/kg by age group and activity (PROT-AGE 2013, ESPEN 2014/2019, ISSN 2017, US DRI) */
+const PROT_R={u50:{light:[0.8,1.0],active:[1.0,1.2],strength:[1.4,1.6]},'50':{light:[1.0,1.2],active:[1.2,1.4],strength:[1.2,1.6]},'65':{light:[1.0,1.2],active:[1.2,1.5],strength:[1.2,1.6]},'75':{light:[1.0,1.2],active:[1.2,1.5],strength:[1.2,1.6]}};
+function protPlan(w){const P=S.pc,r=(PROT_R[P.age]||PROT_R['65'])[P.act]||PROT_R['65'].active;let [lo,hi]=r;if(P.ill){lo=Math.max(lo,1.2);hi=Math.max(hi,1.5)}
+  const old=P.age==='65'||P.age==='75',floor=old?(P.sex==='f'?25:P.sex==='m'?30:25):20,mealMin=Math.max(floor,Math.round(w*(old?0.4:0.3)));
+  return {lo,hi,dlo:Math.round(w*lo),dhi:Math.round(w*hi),meal:Math.max(mealMin,Math.round(w*lo/3)),old}}
 function calcOut(w){
-  const z=S.lang==='zh', lo=Math.round(w*1.0), hi=Math.round(w*1.2), tr=Math.round(w*1.6), meal=[Math.round(lo/3),Math.round(hi/3)];
-  return `<div class="calc-out">
-    <div><span class="k">${z?'保持肌肉（每天）':'To keep muscle (per day)'}</span><b class="big">${lo}–${hi} g</b><span class="muted small">1.0–1.2 g × ${w} kg</span></div>
-    <div><span class="k">${z?'配合力量训练（最多约）':'With strength training (up to about)'}</span><b class="big">${tr} g</b><span class="muted small">1.6 g × ${w} kg</span></div>
-    <div><span class="k">${z?'每餐（分3餐）':'Per meal (3 meals)'}</span><b class="big">${meal[0]}–${Math.max(meal[1],25)} g</b><span class="muted small">${z?'每餐至少 25–30 g 效果较好':'Aim for at least 25–30 g a meal'}</span></div>
-   </div>`;
+  const z=S.lang==='zh',P=S.pc,r=protPlan(w),f=v=>v.toFixed(1);
+  const ag={u50:z?'50岁以下':'under 50','50':z?'50–64岁':'aged 50–64','65':z?'65–74岁':'aged 65–74','75':z?'75岁及以上':'aged 75+'}[P.age];
+  const ac={light:z?'活动量少':'light activity',active:z?'经常活动':'active',strength:z?'有力量训练':'doing strength training'}[P.act];
+  const sx=P.sex==='m'?(z?'男性':'man'):P.sex==='f'?(z?'女性':'woman'):(z?'成人':'adult');
+  const why=z?`${ag}${sx}，${ac}${P.ill?'，正在康复或体弱':''}：每天每公斤体重约 ${f(r.lo)}–${f(r.hi)} g 蛋白质。`:`For a${/^[aeiou]/.test(sx)?'n':''} ${sx} ${ag}, ${ac}${P.ill?', recovering or frail':''}: about ${f(r.lo)}–${f(r.hi)} g of protein per kg of body weight a day.`;
+  const tips=[];
+  if(r.old)tips.push(z?'年长者的肌肉对蛋白质反应较慢，所以每餐都要吃足，不要集中在晚餐。':'Older muscles respond less to protein, so spread it evenly — enough at every meal, not just dinner.');
+  if(P.sex==='f'&&P.age!=='u50')tips.push(z?'更年期后肌肉和骨质流失较快：配合足够蛋白质、钙质和力量训练。':'After menopause, muscle and bone are lost faster — pair protein with calcium and strength training.');
+  if(P.sex==='m'&&r.old)tips.push(z?'男性的肌肉量较大，每餐目标约 30 g，帮助减缓肌肉流失。':'Men usually carry more muscle — aim for about 30 g a meal to slow muscle loss.');
+  if(P.act==='strength')tips.push(z?'训练后两小时内吃一餐含蛋白质的食物或饮品。':'Have a protein-rich meal or drink within two hours after training.');
+  if(P.ill)tips.push(z?'生病、手术后或体弱时需要更多蛋白质，请与医生或营养师确认目标。':'Illness, surgery and frailty raise protein needs — confirm the target with your doctor or dietitian.');
+  return `<p class="small calc-why">${why}</p><div class="calc-out">
+    <div><span class="k">${z?'每天建议':'Recommended per day'}</span><b class="big">${r.dlo===r.dhi?r.dlo:r.dlo+'–'+r.dhi} g</b><span class="muted small">${f(r.lo)}–${f(r.hi)} g × ${w} kg</span></div>
+    <div><span class="k">${z?'每餐（分3餐）':'Per meal (3 meals)'}</span><b class="big">${z?'至少 ':'at least '}${r.meal} g</b><span class="muted small">${r.old?(z?'年长者每餐需要更多':'older adults need more per meal'):(z?'平均分配到各餐':'spread across meals')}</span></div>
+    <div><span class="k">${z?'约等于':'That is about'}</span><b class="big">${Math.round(r.dhi/7)} ${z?'份':'servings'}</b><span class="muted small">${z?'每份约 7 g（1 个鸡蛋、30 g 鱼肉或 1 杯豆奶）':'of ~7 g each (1 egg, 30 g fish or 1 glass soy milk)'}</span></div>
+   </div>${tips.length?`<ul class="plain small calc-tips">${tips.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}`;
 }
+function pcSeg(k,label,opts){return `<div class="calc-in pc-row"><span>${label}</span><div class="seg pc-seg" style="--n:${opts.length}">${opts.map(([v,l])=>`<button data-pc="${k}|${v}" aria-pressed="${S.pc[k]===v}">${l}</button>`).join('')}</div></div>`}
 function protCalc(){
   const z=S.lang==='zh', w=Math.max(30,Math.min(150,+S.wt||60));
   const lo=Math.round(w*1.0), hi=Math.round(w*1.2), tr=Math.round(w*1.6), meal=[Math.round(lo/3),Math.round(hi/3)];
   return `<div class="calc">
+   ${pcSeg('sex',z?'性别':'Sex',[['m',z?'男':'Male'],['f',z?'女':'Female']])}
+   ${pcSeg('age',z?'年龄':'Age group',[['u50',z?'50岁以下':'Under 50'],['50','50–64'],['65','65–74'],['75','75+']])}
+   ${pcSeg('act',z?'活动量':'Activity',[['light',z?'较少':'Light'],['active',z?'经常活动':'Active'],['strength',z?'力量训练':'Strength training']])}
+   <button class="pc-ill ${S.pc.ill?'on':''}" data-pc="ill|" aria-pressed="${S.pc.ill}"><span class="tick">${tickSvg}</span>${z?'正在从疾病、手术中康复，或身体虚弱':'Recovering from illness or surgery, or frail'}</button>
    <label class="calc-in" for="wtIn"><span>${z?'你的体重':'Your body weight'}</span><span class="row" style="gap:8px"><input id="wtIn" type="number" inputmode="decimal" min="30" max="150" step="1" value="${w}"><b>kg</b></span></label>
    <input id="wtRange" type="range" min="35" max="120" step="1" value="${Math.min(120,Math.max(35,w))}" aria-label="${z?'体重':'Body weight'}">
    <div id="calcOut">${calcOut(w)}</div>
@@ -2463,7 +2488,7 @@ function vHome(){
     <img class="prot-img" src="${veg?HOMEIMG.vprotein:HOMEIMG.protein}" alt="">
     <div class="ph"><span class="eyebrow">${z?'蛋白质计算器':'Protein calculator'}</span>${dietToggle(z)}</div>
     <h2>${z?'我每天需要多少蛋白质？':'How much protein do I need?'}</h2>
-    <p class="small muted">${z?'HealthHub 建议50岁以上每天每公斤体重约 1.2 克蛋白质（国际专家建议至少 1.0–1.2 克）。配合力量训练时，增加到约 1.6 克/公斤，再多的效果就不明显。':'HealthHub recommends about 1.2 g of protein per kg of body weight a day for adults 50+ (international experts say at least 1.0–1.2 g). With strength training, up to about 1.6 g/kg helps build muscle; more than that adds little.'}</p>
+    <p class="small muted">${z?'HealthHub 建议50岁以上每天每公斤体重约 1.2 克蛋白质（国际专家建议至少 1.0–1.2 克）。配合力量训练时，增加到约 1.6 克/公斤，再多的效果就不明显。':'HealthHub recommends about 1.2 g of protein per kg of body weight a day for adults 50+ (international experts say at least 1.0–1.2 g). With strength training, up to about 1.6 g/kg helps build muscle; more than that adds little.'}${z?' 选择性别、年龄和活动量，计算你的建议量。':' Choose sex, age group and activity to get your own target.'}</p>
     <div id="calcBox">${protCalc()}</div>
     <h3>${veg?(z?'素食蛋白质来源':'Vegetarian protein foods'):(z?'常见食物的蛋白质（约值）':'Protein in everyday foods (approximate)')}</h3>
     <div class="tbl"><table class="ftab"><thead><tr><th>${z?'食物':'Food'}</th><th>${z?'蛋白质':'Protein'}</th></tr></thead><tbody>${(veg?vfoods:foods).map(f=>`<tr><td>${f[0]}</td><td class="m">${f[1]} g</td></tr>`).join('')}</tbody></table></div>
@@ -3137,6 +3162,7 @@ document.addEventListener('click',ev=>{
   if(ds.zoom){const e=BYID[ds.zoom];const sh=shotOf(e,ds.st?{side:JSON.parse(ds.st)}:null);const f=sh.flip!==!!MIR[e.id];
     if(sh.a)modal(`<h3>${esc(N(e))}</h3><div class="full ${f?'mir':''}"><figure><img src="${sh.a}" alt="${esc(N(e))} A"><figcaption class="small muted">${t('aStart')}</figcaption></figure><figure><img src="${sh.b}" alt="${esc(N(e))} B"><figcaption class="small muted">${t('bEnd')}</figcaption></figure></div>`);return}
   if(ds.exp){doExport(ds.exp);return}
+  if(ds.pc){const [k,v]=ds.pc.split('|');if(k==='ill')S.pc.ill=!S.pc.ill;else S.pc[k]=v;store.set('pc',S.pc);const bx=document.getElementById('calcBox');if(bx)bx.innerHTML=protCalc();return}
   if(ds.diet){S.diet=ds.diet;store.set('diet',S.diet);const y=window.scrollY;render();window.scrollTo(0,y);return}
   if(ds.jump){const el=document.getElementById(ds.jump);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(b.id==='admOut'){wipeClient();S.admin=false;store.set('admin',false);toast(S.lang==='zh'?'已登出':'Logged out');return go('home')}
